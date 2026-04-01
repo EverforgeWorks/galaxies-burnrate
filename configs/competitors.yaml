@@ -1,0 +1,15 @@
+factions:
+  omni_corp:
+    id: omni_corp
+    name: OmniCorp Logistics
+    description: A massive, ruthless bulk-freight monopoly.
+    aggressiveness: high      # Steals contracts faster
+    preferred_tags: []        # Takes safe, standard freight
+    base_chassis: freighter
+  crimson_syndicate:
+    id: crimson_syndicate
+    name: The Crimson Syndicate
+    description: A shadow network of smugglers and pirates.
+    aggressiveness: medium
+    preferred_tags: [illicit, hazardous]
+    base_chassis: scout

@@ -1,0 +1,73 @@
+events:
+  pirate_ambush:
+    id: pirate_ambush
+    name: Pirate Ambush
+    description: A heavily armed raider drops out of the local shadow and locks targeting lasers on your hull.
+    trigger_phase: transit
+    target_role: pilot
+    required_tag: ""
+    difficulty_class: 15
+    success_log: "Your pilot executes a flawless barrel roll, breaking their lock. You escape into the void."
+    failure_log: "Your pilot fumbles the thrusters. The pirate rakes your hull, siphoning credits from your corporate account."
+    failure_penalty: credit_loss
+    penalty_amount: 1500
+  asteroid_field:
+    id: asteroid_field
+    name: Dense Asteroid Field
+    description: Navigation sensors detect an uncharted, densely packed asteroid field directly in your flight path.
+    trigger_phase: transit
+    target_role: pilot
+    required_tag: ""
+    difficulty_class: 12
+    success_log: "Your pilot dances the ship through the spinning rocks without a scratch."
+    failure_log: "A glancing blow damages the hull, forcing you to limp to the destination and extending travel time."
+    failure_penalty: time_delay
+    penalty_amount: 2
+  engine_failure:
+    id: engine_failure
+    name: Main Drive Stall
+    description: The primary ion compressor seizes violently. Sparks shower the engineering bay. You are adrift.
+    trigger_phase: transit
+    target_role: engineer
+    required_tag: ""
+    difficulty_class: 14
+    success_log: "Your engineer bypasses the blown relay and gets the drive humming again."
+    failure_log: "The repair fails. You are forced to hail a corporate tug-ship to drag you into the nearest lane."
+    failure_penalty: credit_loss
+    penalty_amount: 800
+  cargo_shift:
+    id: cargo_shift
+    name: Severe Sub-Space Turbulence
+    description: The ship hits a gravity eddy, violently tossing unsecured cargo in the hold.
+    trigger_phase: transit
+    target_role: cargohand
+    required_tag: ""
+    difficulty_class: 11
+    success_log: "Your Cargo Hand anticipates the shift and magnetically locks the crates just in time."
+    failure_log: "Crates smash against the bulkheads. You have to pay out of pocket to cover the damaged freight."
+    failure_penalty: credit_loss
+    penalty_amount: 400
+  containment_breach:
+    id: containment_breach
+    name: Containment Breach
+    description: Warning klaxons blare as unprotected hazardous cargo loses magnetic stabilization.
+    trigger_phase: transit
+    target_role: engineer
+    required_tag: hazardous
+    difficulty_class: 16
+    success_log: "Your engineer manually seals the breach, preventing a volatile spill."
+    failure_log: "The container ruptures! Toxic materials eat through the decking."
+    failure_penalty: hazardous_spill
+    penalty_amount: 0
+  customs_inspection:
+    id: customs_inspection
+    name: Surprise Customs Patrol
+    description: A sector authority cutter drops out of warp and initiates a deep-penetration cargo scan.
+    trigger_phase: transit
+    target_role: pilot
+    required_tag: ""
+    difficulty_class: 16
+    success_log: "Your pilot casually broadcasts spoofed transponder codes, and the cutter moves on."
+    failure_log: "The cutter overrides your bafflers and downloads your full manifest."
+    failure_penalty: inspection
+    penalty_amount: 0

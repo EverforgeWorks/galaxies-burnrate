@@ -1,0 +1,127 @@
+# ==============================================================================
+# PLANETARY TRAITS
+# ==============================================================================
+# Defines the economic, social, and political variables that dictate planetary 
+# generation, pricing, and risk.
+# ==============================================================================
+
+economic_statuses:
+  destitute:
+    id: destitute
+    name: Destitute
+    export_contract_multiplier: 0.5
+    import_contract_multiplier: 1.5
+    export_passenger_multiplier: 0.5
+    import_passenger_multiplier: 1.5
+    fuel_cost_multiplier: 2.0
+    shipyard_cost_multiplier: 1.5
+    repair_cost_multiplier: 2.0
+  struggling:
+    id: struggling
+    name: Struggling
+    export_contract_multiplier: 0.8
+    import_contract_multiplier: 1.2
+    export_passenger_multiplier: 0.8
+    import_passenger_multiplier: 1.2
+    fuel_cost_multiplier: 1.25
+    shipyard_cost_multiplier: 1.1
+    repair_cost_multiplier: 1.25
+  balanced:
+    id: balanced
+    name: Balanced
+    export_contract_multiplier: 1.0
+    import_contract_multiplier: 1.0
+    export_passenger_multiplier: 1.0
+    import_passenger_multiplier: 1.0
+    fuel_cost_multiplier: 1.0
+    shipyard_cost_multiplier: 1.0
+    repair_cost_multiplier: 1.0
+  booming:
+    id: booming
+    name: Booming
+    export_contract_multiplier: 1.5
+    import_contract_multiplier: 0.8
+    export_passenger_multiplier: 1.5
+    import_passenger_multiplier: 0.8
+    fuel_cost_multiplier: 0.8
+    shipyard_cost_multiplier: 0.9
+    repair_cost_multiplier: 0.8
+  prosperous:
+    id: prosperous
+    name: Prosperous
+    export_contract_multiplier: 2.0
+    import_contract_multiplier: 0.5
+    export_passenger_multiplier: 2.0
+    import_passenger_multiplier: 0.5
+    fuel_cost_multiplier: 0.5
+    shipyard_cost_multiplier: 0.75
+    repair_cost_multiplier: 0.5
+
+social_statuses:
+  isolationist:
+    id: isolationist
+    name: Isolationist
+    contract_volume_multiplier: 0.5
+    passenger_export_volume_multiplier: 0.1
+    passenger_import_volume_multiplier: 0.1
+  oppressive:
+    id: oppressive
+    name: Oppressive
+    contract_volume_multiplier: 0.8
+    passenger_export_volume_multiplier: 2.5
+    passenger_import_volume_multiplier: 0.2
+  conventional:
+    id: conventional
+    name: Conventional
+    contract_volume_multiplier: 1.0
+    passenger_export_volume_multiplier: 1.0
+    passenger_import_volume_multiplier: 1.0
+  cosmopolitan:
+    id: cosmopolitan
+    name: Cosmopolitan
+    contract_volume_multiplier: 1.5
+    passenger_export_volume_multiplier: 1.5
+    passenger_import_volume_multiplier: 1.5
+  utopian:
+    id: utopian
+    name: Utopian
+    contract_volume_multiplier: 1.2
+    passenger_export_volume_multiplier: 0.2
+    passenger_import_volume_multiplier: 2.5
+
+political_statuses:
+  anarchy:
+    id: anarchy
+    name: Anarchy
+    docking_fee_multiplier: 0.0
+    inspection_chance_modifier: -100
+    illicit_export_chance_multiplier: 3.0
+    illicit_import_payout_multiplier: 0.5
+  dictatorship:
+    id: dictatorship
+    name: Dictatorship
+    docking_fee_multiplier: 1.5
+    inspection_chance_modifier: 40
+    illicit_export_chance_multiplier: 0.1
+    illicit_import_payout_multiplier: 3.0
+  oligarchy:
+    id: oligarchy
+    name: Oligarchy
+    docking_fee_multiplier: 2.0
+    inspection_chance_modifier: 15
+    illicit_export_chance_multiplier: 0.5
+    illicit_import_payout_multiplier: 2.0
+  democracy:
+    id: democracy
+    name: Democracy
+    docking_fee_multiplier: 1.0
+    inspection_chance_modifier: 0
+    illicit_export_chance_multiplier: 1.0
+    illicit_import_payout_multiplier: 1.0
+  theocracy:
+    id: theocracy
+    name: Theocracy
+    docking_fee_multiplier: 1.25
+    inspection_chance_modifier: 25
+    illicit_export_chance_multiplier: 0.2
+    illicit_import_payout_multiplier: 2.5

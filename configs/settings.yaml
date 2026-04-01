@@ -1,0 +1,160 @@
+# ==============================================================================
+# GALAXIES: BURN RATE - MASTER SIMULATION SETTINGS
+# ==============================================================================
+# This file dictates the global mathematical constants, economic margins, 
+# and probability curves for the entire simulation. 
+#
+# Adjusting these values allows you to completely overhaul the game experience.
+# Increase modifiers and payouts for a relaxed, forgiving sandbox, or tighten 
+# the margins and increase event risks for a brutal, high-stakes survival mode.
+# ==============================================================================
+
+player:
+  # The amount of corporate capital (C) the player begins with.
+  starting_credits: 10000
+  # The ID of the planet where the player's first ship spawns (must match an ID in planets.yaml).
+  starting_planet: prime
+
+contracts:
+  # The initial number of contracts generated at each planetary market when starting a new game.
+  starting_min_per_planet: 8
+  starting_max_per_planet: 20
+  # The target capacity the engine will attempt to refill the contract board to each day.
+  max_per_planet: 10
+  
+  # The bounds for the randomized cargo volume per contract.
+  qty_min: 2
+  qty_max: 10
+  
+  # Modifies payout based on the Euclidean distance between the origin and destination.
+  # Formula: Multiplier = 1.0 + (Distance * distance_modifier)
+  # Example: A distance of 6 with a 0.15 modifier results in a 1.9x payout multiplier.
+  distance_modifier: 0.06
+  
+  # The RNG bounds applied to the final contract payout to simulate market fluctuations.
+  # Formula: Final Payout = Base Value * Distance Multiplier * Variance * Global Multiplier * Tag Multipliers
+  # Example: 0.8 to 1.2 means the payout will randomly swing between -20% and +20% of its calculated worth.
+  variance_min: 0.8
+  variance_max: 1.2
+  
+  # Determines how many days a player has to complete a contract before late fees accrue.
+  # Formula: Expiration Day = Current Day + Transit Distance + RNG(Buffer Min to Max)
+  expiration_buffer_min: 3
+  expiration_buffer_max: 7
+
+crew:
+  # The global payroll cycle. Every X days, the engine deducts the total accrued salaries of all active crew.
+  # Formula: Deduction = Sum of (Crew Member Daily Salary * pay_period_days)
+  pay_period_days: 7
+
+cantina:
+  # The bounds for the number of recruitable candidates generated at a Cantina-tagged planet.
+  min_crew: 5
+  max_crew: 12
+  
+  # The absolute bounds for a generated crew member's skill level.
+  skill_min: 1
+  skill_max: 10
+  
+  # The probability distribution for generating specific skill levels. 
+  # This array corresponds to levels 1 through 10 consecutively. 
+  # The engine rolls against the sum of these weights. Higher numbers mean higher probability.
+  # Example: [100, 90, 80] means Level 1 is slightly more common than Level 2, and much more common than Level 3.
+  # The default curve makes levels 1-3 common, 4-7 uncommon, 8-9 rare, and 10 legendary.
+  skill_weights: [100, 90, 80, 50, 30, 20, 10, 5, 2, 1]
+
+# Defines the mechanics governing crew happiness, pay expectations, and health.
+crew_states:
+  morale_starting: 7
+  morale_abandon_threshold: 2
+  raise_request_chance_percent: 5
+  raise_salary_bump_percent: 15
+  illness_contraction_chance_percent: 2
+  illness_min_days: 3
+  illness_max_days: 7
+  illness_base_dc: 12
+  # Skill modifiers applied during transit hazard checks based on current morale.
+  morale_modifier_1_to_2: -2
+  morale_modifier_3_to_4: -1
+  morale_modifier_5_to_6: 0
+  morale_modifier_7_to_8: 1
+  morale_modifier_9_to_10: 2
+
+passenger:
+  # The initial and daily generation limits for the passenger terminal boards.
+  starting_min_per_planet: 5
+  starting_max_per_planet: 12
+  max_per_planet: 24
+  
+  # Determines how many days a passenger will wait at the terminal before leaving (expiring).
+  expiration_buffer_min: 3
+  expiration_buffer_max: 7
+
+events:
+  # The baseline daily probability that an encounter (pirate, anomaly, hazard) will trigger while a ship is in transit.
+  # This is a flat percentage check (e.g., 10 = 10% chance per day).
+  base_chance_percent: 33
+
+cargo_risks:
+  # Triggered when an unprotected Hazardous cargo event (Containment Breach) fails.
+  # If true, the spill destroys an ADDITIONAL random contract in the hold.
+  hazardous_chain_chance_percent: 25
+  # The flat percentage chance that a failed Hazardous event completely destroys the vessel and all hands aboard.
+  hazardous_ship_destroy_percent: 1
+  
+  # Triggered when an Illicit cargo event (Customs Inspection) fails.
+  # The engine rolls this percentage individually against EVERY illicit contract on board.
+  # If caught, the goods are seized and the player is fined based on the base value of the goods.
+  illicit_discovery_chance_percent: 40
+  # The multiplier applied to the base value of the seized goods to determine the corporate fine.
+  # Example: 10 units of goods worth 600 base value = 6000. At a 2.0 multiplier, the fine is 12000 C.
+  illicit_fine_multiplier: 2.0
+  
+  # Triggered when ANY transit event fails (e.g., Asteroid Field, Pirate Attack) and unprotected fragile cargo is aboard.
+  # If true, a percentage of the fragile cargo quantity defined below is immediately destroyed due to collateral damage.
+  fragile_damage_chance_percent: 30
+  # The percentage of a fragile cargo contract's total volume that is destroyed when collateral damage occurs.
+  # Example: A contract of 10 units taking damage at 50% will lose 5 units permanently.
+  fragile_damage_quantity_percent: 50
+  
+  # The daily compounding penalty applied to a contract's final payout once it passes its Expiration Day.
+  # Formula: Penalty = Original Payout * (late_fee_percent_per_day / 100)
+  late_fee_percent_per_day: 10
+
+competitors:
+  # The total number of independent rival ships operating in the galaxy.
+  min_active: 3
+  max_active: 8
+
+multipliers:
+  # Global economic levers. Adjusting these alters the baseline math for the entire simulation.
+  
+  # The percentage of a module's original value refunded when sold at a shipyard. (0.50 = 50%)
+  module_refund_rate: 0.50
+  # The percentage of a module's original value charged to repair a damaged module. (0.25 = 25%)
+  module_repair_rate: 0.25
+  
+  # Modifies the calculated daily salary of all newly generated crew members.
+  # Base Salary Formula: Role Base Salary * (1.0 + ((Skill Level - 1) * 0.5))
+  # Final Salary Formula: Base Salary * crew_salary
+  crew_salary: 1.0
+  
+  # A flat multiplier applied to the final calculated payout of all freight contracts.
+  contract_payout: 1.0
+  
+  # A flat multiplier applied to the localized fuel cost of the planetary market you are refueling at.
+  fuel_cost: 1.0
+  
+  # A flat multiplier applied to the calculated fare of all passengers.
+  # Fare Formula: Class Base Payout * Distance * passenger_payout
+  passenger_payout: 1.0
+  vip_payout: 1.0
+  fugitive_payout: 1.0
+  vip_delay_penalty_percent: 25
+  
+  # Tag-specific multipliers applied to freight contracts carrying these commodities.
+  # Example: A 1000 C contract carrying Illicit goods with a 1.5 multiplier pays out 1500 C.
+  hazardous_payout: 1.7
+  fragile_payout: 1.4
+  illicit_payout: 1.5
+  perishable_payout: 1.4

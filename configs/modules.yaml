@@ -1,0 +1,145 @@
+modules:
+  basic_engine:
+    id: basic_engine
+    name: Basic Ion Engine
+    description: A standard, reliable sublight drive.
+    value: 2000
+    modifiers:
+      speed: 10
+      fuel_capacity: 0
+      fuel_consumption: 1
+      crew_capacity: 0
+      passenger_space: 0
+      cargo_space: 0
+      hazardous_protection: 0
+      fragile_protection: 0
+      illicit_concealment: 0
+      perishable_preservation: 0
+  basic_fuel_tank:
+    id: basic_fuel_tank
+    name: Standard Fuel Cell
+    description: An unshielded hydrogen fuel cell.
+    value: 800
+    modifiers:
+      speed: 0
+      fuel_capacity: 50
+      fuel_consumption: 0
+      crew_capacity: 0
+      passenger_space: 0
+      cargo_space: 0
+      hazardous_protection: 0
+      fragile_protection: 0
+      illicit_concealment: 0
+      perishable_preservation: 0
+  standard_cargo_bay:
+    id: standard_cargo_bay
+    name: Standard Cargo Bay
+    description: A basic, unpressurized hold for bulk freight.
+    value: 2500
+    modifiers:
+      speed: 0
+      fuel_capacity: 0
+      fuel_consumption: 0
+      crew_capacity: 0
+      passenger_space: 0
+      cargo_space: 20
+      hazardous_protection: 0
+      fragile_protection: 0
+      illicit_concealment: 0
+      perishable_preservation: 0
+  crew_cabin:
+    id: crew_cabin
+    name: Crew Quarters
+    description: Bunk space and basic life support for up to 3 crew members.
+    value: 1500
+    modifiers:
+      speed: 0
+      fuel_capacity: 0
+      fuel_consumption: 0
+      crew_capacity: 3
+      passenger_space: 0
+      cargo_space: 0
+      hazardous_protection: 0
+      fragile_protection: 0
+      illicit_concealment: 0
+      perishable_preservation: 0
+  passenger_cabin:
+    id: passenger_cabin
+    name: Commercial Cabin
+    description: Comfortable seating and amenities for paying commuters.
+    value: 3000
+    modifiers:
+      speed: 0
+      fuel_capacity: 0
+      fuel_consumption: 0
+      crew_capacity: 0
+      passenger_space: 5
+      cargo_space: 0
+      hazardous_protection: 0
+      fragile_protection: 0
+      illicit_concealment: 0
+      perishable_preservation: 0
+  hazardous_storage:
+    id: hazardous_storage
+    name: Class-4 Containment Bay
+    description: Heavily shielded storage. Adds minimal cargo space but safely secures volatile goods.
+    value: 4500
+    modifiers:
+      speed: 0
+      fuel_capacity: 0
+      fuel_consumption: 0
+      crew_capacity: 0
+      passenger_space: 0
+      cargo_space: 5
+      hazardous_protection: 5
+      fragile_protection: 0
+      illicit_concealment: 0
+      perishable_preservation: 0
+  secure_storage:
+    id: secure_storage
+    name: Gyroscopic Stasis Hold
+    description: Suspends cargo in a shock-absorbing field, protecting delicate shipments.
+    value: 3800
+    modifiers:
+      speed: 0
+      fuel_capacity: 0
+      fuel_consumption: 0
+      crew_capacity: 0
+      passenger_space: 0
+      cargo_space: 5
+      hazardous_protection: 0
+      fragile_protection: 5
+      illicit_concealment: 0
+      perishable_preservation: 0
+  smuggling_compartment:
+    id: smuggling_compartment
+    name: Sensor-Baffled Bulkhead
+    description: Lead-lined, hidden compartments designed to evade standard port authority scans.
+    value: 6000
+    modifiers:
+      speed: 0
+      fuel_capacity: 0
+      fuel_consumption: 0
+      crew_capacity: 0
+      passenger_space: 0
+      cargo_space: 5
+      hazardous_protection: 0
+      fragile_protection: 0
+      illicit_concealment: 5
+      perishable_preservation: 0
+  refrigerated_storage:
+    id: refrigerated_storage
+    name: Cryo-Storage Unit
+    description: Deep-freeze containment that significantly extends the shelf life of biological cargo.
+    value: 3500
+    modifiers:
+      speed: 0
+      fuel_capacity: 0
+      fuel_consumption: 0
+      crew_capacity: 0
+      passenger_space: 0
+      cargo_space: 5
+      hazardous_protection: 0
+      fragile_protection: 0
+      illicit_concealment: 0
+      perishable_preservation: 5
