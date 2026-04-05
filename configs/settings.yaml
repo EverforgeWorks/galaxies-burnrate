@@ -3,158 +3,900 @@
 # ==============================================================================
 # This file dictates the global mathematical constants, economic margins, 
 # and probability curves for the entire simulation. 
-#
-# Adjusting these values allows you to completely overhaul the game experience.
-# Increase modifiers and payouts for a relaxed, forgiving sandbox, or tighten 
-# the margins and increase event risks for a brutal, high-stakes survival mode.
 # ==============================================================================
 
+# ------------------------------------------------------------------------------
+# SECTION 1: GLOBAL SETTINGS, DEFINITIONS & PLAYER STATE
+# ------------------------------------------------------------------------------
 player:
-  # The amount of corporate capital (C) the player begins with.
-  starting_credits: 10000
-  # The ID of the planet where the player's first ship spawns (must match an ID in planets.yaml).
-  starting_planet: prime
+  starting_credits: 10000 # Amount of credits the player will start with.
+  starting_ship_count: 1 # Number of ships the player will choose to start with. Uses the ship section to determine which ships can be started with.
 
-contracts:
-  # The initial number of contracts generated at each planetary market when starting a new game.
-  starting_min_per_planet: 8
-  starting_max_per_planet: 20
-  # The target capacity the engine will attempt to refill the contract board to each day.
-  max_per_planet: 10
-  
-  # The bounds for the randomized cargo volume per contract.
-  qty_min: 2
-  qty_max: 10
-  
-  # Modifies payout based on the Euclidean distance between the origin and destination.
-  # Formula: Multiplier = 1.0 + (Distance * distance_modifier)
-  # Example: A distance of 6 with a 0.15 modifier results in a 1.9x payout multiplier.
-  distance_modifier: 0.06
-  
-  # The RNG bounds applied to the final contract payout to simulate market fluctuations.
-  # Formula: Final Payout = Base Value * Distance Multiplier * Variance * Global Multiplier * Tag Multipliers
-  # Example: 0.8 to 1.2 means the payout will randomly swing between -20% and +20% of its calculated worth.
-  variance_min: 0.8
-  variance_max: 1.2
-  
-  # Determines how many days a player has to complete a contract before late fees accrue.
-  # Formula: Expiration Day = Current Day + Transit Distance + RNG(Buffer Min to Max)
-  expiration_buffer_min: 3
-  expiration_buffer_max: 7
+world_settings:
+  planet_generation: combined # From preset, random, combined. 
+  # Preset, only planets listed in the planets section will appear.
+  # Random, only random planets will be generated.
+  # Combined, all preset planets will appear and then random planets will be generated.
+  random_planets: 12 # Number of random planets to generate in Random/Combined planet generation rules.
+  starting_planets: 3 # Number of random planets generated that will be listed as starter planets. 
 
-crew:
-  # The global payroll cycle. Every X days, the engine deducts the total accrued salaries of all active crew.
-  # Formula: Deduction = Sum of (Crew Member Daily Salary * pay_period_days)
-  pay_period_days: 7
-
-cantina:
-  # The bounds for the number of recruitable candidates generated at a Cantina-tagged planet.
-  min_crew: 5
-  max_crew: 12
-  
-  # The absolute bounds for a generated crew member's skill level.
-  skill_min: 1
-  skill_max: 10
-  
-  # The probability distribution for generating specific skill levels. 
-  # This array corresponds to levels 1 through 10 consecutively. 
-  # The engine rolls against the sum of these weights. Higher numbers mean higher probability.
-  # Example: [100, 90, 80] means Level 1 is slightly more common than Level 2, and much more common than Level 3.
-  # The default curve makes levels 1-3 common, 4-7 uncommon, 8-9 rare, and 10 legendary.
-  skill_weights: [100, 90, 80, 50, 30, 20, 10, 5, 2, 1]
-
-# Defines the mechanics governing crew happiness, pay expectations, and health.
-crew_states:
-  morale_starting: 7
-  morale_abandon_threshold: 2
-  raise_request_chance_percent: 5
-  raise_salary_bump_percent: 15
-  illness_contraction_chance_percent: 2
-  illness_min_days: 3
-  illness_max_days: 7
-  illness_base_dc: 12
-  # Skill modifiers applied during transit hazard checks based on current morale.
-  morale_modifier_1_to_2: -2
-  morale_modifier_3_to_4: -1
-  morale_modifier_5_to_6: 0
-  morale_modifier_7_to_8: 1
-  morale_modifier_9_to_10: 2
-
-passenger:
-  # The initial and daily generation limits for the passenger terminal boards.
-  starting_min_per_planet: 5
-  starting_max_per_planet: 12
-  max_per_planet: 24
-  
-  # Determines how many days a passenger will wait at the terminal before leaving (expiring).
-  expiration_buffer_min: 3
-  expiration_buffer_max: 7
-
-events:
-  # The baseline daily probability that an encounter (pirate, anomaly, hazard) will trigger while a ship is in transit.
-  # This is a flat percentage check (e.g., 10 = 10% chance per day).
-  base_chance_percent: 33
+definitions:
+  # These tags dictate valid planet components, module capacities, commodity types, and passenger needs.
+  valid_planet_tags:
+    - market    # If present, the planet will have trade contracts.
+    - cantina   # If present, the planet will have crew for hire.
+    - terminal  # If present, the planet will have passengers contracts.
+    - refuel    # If present, the planet will sell fuel.
+    - shipyard  # If present, the planet will sell ships and modules.
+  valid_cargo_tags:
+    - hazardous 
+    - fragile
+    - illicit
+    - perishable
+  valid_passenger_tags:
+    - vip
+    - fugitive
+    - refugee
+    - military
 
 cargo_risks:
-  # Triggered when an unprotected Hazardous cargo event (Containment Breach) fails.
-  # If true, the spill destroys an ADDITIONAL random contract in the hold.
-  hazardous_chain_chance_percent: 25
-  # The flat percentage chance that a failed Hazardous event completely destroys the vessel and all hands aboard.
-  hazardous_ship_destroy_percent: 1
-  
-  # Triggered when an Illicit cargo event (Customs Inspection) fails.
-  # The engine rolls this percentage individually against EVERY illicit contract on board.
-  # If caught, the goods are seized and the player is fined based on the base value of the goods.
-  illicit_discovery_chance_percent: 40
-  # The multiplier applied to the base value of the seized goods to determine the corporate fine.
-  # Example: 10 units of goods worth 600 base value = 6000. At a 2.0 multiplier, the fine is 12000 C.
-  illicit_fine_multiplier: 2.0
-  
-  # Triggered when ANY transit event fails (e.g., Asteroid Field, Pirate Attack) and unprotected fragile cargo is aboard.
-  # If true, a percentage of the fragile cargo quantity defined below is immediately destroyed due to collateral damage.
-  fragile_damage_chance_percent: 30
-  # The percentage of a fragile cargo contract's total volume that is destroyed when collateral damage occurs.
-  # Example: A contract of 10 units taking damage at 50% will lose 5 units permanently.
-  fragile_damage_quantity_percent: 50
-  
-  # The daily compounding penalty applied to a contract's final payout once it passes its Expiration Day.
-  # Formula: Penalty = Original Payout * (late_fee_percent_per_day / 100)
-  late_fee_percent_per_day: 10
-
-competitors:
-  # The total number of independent rival ships operating in the galaxy.
-  min_active: 3
-  max_active: 8
+  hazardous_chain_chance_percent: .25  # Chance that damaged hazardous cargo will chain react and destroy other cargo aboard.
+  hazardous_ship_destroy_percent: 1    # Chance that damaged hazardous cargo will destroy the ship.
+  illicit_discovery_chance_percent: .6 # Base chance that unprotected illicit cargo will be discovered during an inspection.
+  illicit_fine_multiplier: 2.0         # Percentage of illicit cargo contract value that player will be fined in the event of confiscation.
+  fragile_damage_chance_percent: .5    # Chance that unprotected fragile cargo will be damaged during transit.
+  late_fee_percent_per_day: .10        # Percentage of contract value that will be reduced daily after the expiration date.
 
 multipliers:
-  # Global economic levers. Adjusting these alters the baseline math for the entire simulation.
-  
-  # The percentage of a module's original value refunded when sold at a shipyard. (0.50 = 50%)
-  module_refund_rate: 0.50
-  # The percentage of a module's original value charged to repair a damaged module. (0.25 = 25%)
-  module_repair_rate: 0.25
-  
-  # Modifies the calculated daily salary of all newly generated crew members.
-  # Base Salary Formula: Role Base Salary * (1.0 + ((Skill Level - 1) * 0.5))
-  # Final Salary Formula: Base Salary * crew_salary
   crew_salary: 1.0
-  
-  # A flat multiplier applied to the final calculated payout of all freight contracts.
   contract_payout: 1.0
-  
-  # A flat multiplier applied to the localized fuel cost of the planetary market you are refueling at.
   fuel_cost: 1.0
-  
-  # A flat multiplier applied to the calculated fare of all passengers.
-  # Fare Formula: Class Base Payout * Distance * passenger_payout
   passenger_payout: 1.0
   vip_payout: 1.0
   fugitive_payout: 1.0
   vip_delay_penalty_percent: 25
-  
-  # Tag-specific multipliers applied to freight contracts carrying these commodities.
-  # Example: A 1000 C contract carrying Illicit goods with a 1.5 multiplier pays out 1500 C.
   hazardous_payout: 1.7
   fragile_payout: 1.4
   illicit_payout: 1.5
   perishable_payout: 1.4
+
+# ------------------------------------------------------------------------------
+# SECTION 2: HUMAN RESOURCES & CREW MECHANICS
+# ------------------------------------------------------------------------------
+# Defines the core progression, state tracking, and biological hazards 
+# for hired personnel. Modifiers align with d20 check systems.
+# ------------------------------------------------------------------------------
+crew:
+  pay_period_days: 7
+  skill_min: 1
+  skill_max: 10
+  skill_weights: [100, 90, 80, 50, 30, 20, 10, 5, 2, 1]
+  skill_bonuses: [-2, -1, 0, +1, +2, +3, +4, +5, +6, +8]
+  
+  # Designates the UI/Flavor text for each tier of the 1-10 skill range
+  skill_names: 
+    - "Rookie"
+    - "Novice"
+    - "Apprentice"
+    - "Capable"
+    - "Competent"
+    - "Experienced"
+    - "Expert"
+    - "Master"
+    - "Elite"
+    - "Legend"
+  
+  morale_min: 1
+  morale_max: 10
+  morale_skill_modifiers: [-2, -2, -1, -1, 0, 0, +1, +1, +2, +2]
+  starting_morale_weights: [5, 8, 12, 20, 15, 15, 20, 8, 5, 2]
+  morale_raise_chance: [80, 70, 60, 50, 40, 30, 35, 40, 50, 60]
+  morale_raise_percent: [40, 35, 30, 25, 15, 25, 35, 40, 45, 50]
+  morale_abandon_chance: [60, 40, 30, 25, 12, 8, 4, 3, 2, 0]
+  
+  # Designates the UI/Flavor text for each tier of the 1-10 morale range
+  morale_names: 
+    - "Mutinous"
+    - "Hostile"
+    - "Resentful"
+    - "Disgruntled"
+    - "Indifferent"
+    - "Content"
+    - "Satisfied"
+    - "Motivated"
+    - "Dedicated"
+    - "Fanatical"
+
+illnesses: 
+  warp_sickness:
+    name: "Warp-Sickness"
+    contraction_chance_percent: 2
+    min_days: 3
+    max_days: 7
+    base_dc: 8
+    
+  spontaneous_bioluminescence:
+    name: "Spontaneous Bioluminescence"
+    contraction_chance_percent: 1
+    min_days: 5
+    max_days: 10
+    base_dc: 9
+    
+  tachyon_fever:
+    name: "Tachyon Fever"
+    contraction_chance_percent: 2
+    min_days: 4
+    max_days: 8
+    base_dc: 10
+    
+  nebula_mumps:
+    name: "Nebula Mumps"
+    contraction_chance_percent: 3
+    min_days: 3
+    max_days: 6
+    base_dc: 11
+    
+  asteroid_pox:
+    name: "Asteroid Pox"
+    contraction_chance_percent: 2
+    min_days: 4
+    max_days: 9
+    base_dc: 13
+    
+# ------------------------------------------------------------------------------
+# SECTION 3: COMMODITY REGISTRY
+# ------------------------------------------------------------------------------
+commodities:
+  # --- BASIC COMMODITIES ---
+  machinery_parts:
+    id: machinery_parts
+    name: Machinery Parts
+    description: "Standardized gears, servos, and hydraulic lines used in heavy industry."
+    base_value: 65
+    tags: []
+
+  fusion_coils:
+    id: fusion_coils
+    name: Fusion Coils
+    description: "High-density energy cells used to power everything from habitat domes to ship drives."
+    base_value: 110
+    tags: []
+
+  # --- HAZARDOUS ---
+  volatile_isotopes:
+    id: volatile_isotopes
+    name: Volatile Isotopes
+    description: "Unstable radioactive fuel cores. Prone to catastrophic containment failure if jostled."
+    base_value: 180
+    tags: [hazardous]
+
+  corrosive_sludge:
+    id: corrosive_sludge
+    name: Industrial Acid Sludge
+    description: "Toxic byproduct of starship manufacturing. If the vats leak, the hull is going with it."
+    base_value: 130
+    tags: [hazardous]
+
+  # --- FRAGILE ---
+  masterwork_sculptures:
+    id: masterwork_sculptures
+    name: Neo-Renaissance Art
+    description: "Hand-carved marble and crystal sculptures destined for a Core-Worlder’s private collection."
+    base_value: 280
+    tags: [fragile]
+
+  micro_circuitry:
+    id: micro_circuitry
+    name: Advanced Micro-Circuitry
+    description: "Delicate processor wafers used in high-end AI and android production."
+    base_value: 190
+    tags: [fragile]
+
+  # --- ILLICIT ---
+  unlicensed_cybernetics:
+    id: unlicensed_cybernetics
+    name: Unlicensed Cybernetics
+    description: "Black-market neural laces and military-grade augmentations. Highly illegal in core sectors."
+    base_value: 190
+    tags: [illicit]
+
+  encrypted_data_cores:
+    id: encrypted_data_cores
+    name: Stolen Corporate Data
+    description: "Encrypted drives containing trade secrets or financial records. Port authorities will seize on sight."
+    base_value: 300
+    tags: [illicit]
+
+  # --- PERISHABLE ---
+  cloned_organs:
+    id: cloned_organs
+    name: Vat-Grown Organs
+    description: "Livers, lungs, and hearts stored in nutrient baths. Every day past the deadline increases 'rejection' risk."
+    base_value: 250
+    tags: [perishable]
+
+  live_seafood:
+    id: live_seafood
+    name: Live Seafood
+    description: "A luxury delicacy that must arrive alive to maintain its exorbitant market price."
+    base_value: 160
+    tags: [perishable]
+
+# ------------------------------------------------------------------------------
+# SECTION 4: SHIP CHASSIS DEFINITIONS
+# ------------------------------------------------------------------------------
+chassis:
+  # --- TIER 1: THE STARTERS (Generalist) ---
+  shuttle_wasp:
+    id: shuttle_wasp
+    name: "Wasp-Class Shuttle"
+    description: "A repurposed short-range taxi. It’s cramped and loud, but it’s yours."
+    base_value: 12000
+    max_modules: 6
+    default_modules: [basic_engine, basic_fuel_tank, crew_cabin, standard_cargo_bay]
+    starter_ship: true
+
+  barge_mule:
+    id: barge_mule
+    name: "Mule Freighter"
+    description: "The classic starter freighter. Slow, ugly, and reliable as a brick."
+    base_value: 28000
+    max_modules: 12
+    default_modules: [basic_engine, basic_fuel_tank, basic_fuel_tank, crew_cabin, standard_cargo_bay, standard_cargo_bay, standard_cargo_bay]
+    starter_ship: true
+
+  coach_shuttle:
+    id: coach_shuttle
+    name: "Stellar Coach"
+    description: "A standard commuter vessel. If the seats weren't so sticky, it might be comfortable."
+    base_value: 22000
+    max_modules: 8
+    default_modules: [basic_engine, basic_fuel_tank, crew_cabin, passenger_cabin]
+    starter_ship: true
+
+  # --- TIER 2: THE PROFESSIONALS (Specialists) ---
+  clipper_shadow:
+    id: clipper_shadow
+    name: "Shadow-Class Runner"
+    description: "Designed for speed and evasion. Favored by blockade runners and those who don't want to be scanned."
+    base_value: 55000
+    max_modules: 16
+    default_modules: [overclocked_engine, basic_fuel_tank, crew_cabin, smuggling_compartment, standard_cargo_bay]
+    starter_ship: false
+
+  tanker_hazmat:
+    id: tanker_hazmat
+    name: "HazMat Tanker"
+    description: "Reinforced plating and lead-lined bulkheads make this the choice for volatile hauling."
+    base_value: 62000
+    max_modules: 18
+    default_modules: [basic_engine, reinforced_fuel_tank, crew_cabin, hazardous_storage, hazardous_storage, standard_cargo_bay]
+    starter_ship: false
+
+  fridge_vanguard:
+    id: fridge_vanguard
+    name: "Vanguard Frost"
+    description: "Equipped with high-efficiency cooling loops. Ideal for long-distance biological transport."
+    base_value: 58000
+    max_modules: 18
+    default_modules: [basic_engine, basic_fuel_tank, crew_cabin, refrigerated_storage, refrigerated_storage, standard_cargo_bay]
+    starter_ship: false
+
+  liner_starlight:
+    id: liner_starlight
+    name: "Starlight Liner"
+    description: "A mid-tier commercial transport designed for high-paying corporate commuters."
+    base_value: 65000
+    max_modules: 14
+    default_modules: [basic_engine, basic_fuel_tank, crew_cabin, luxury_suite, passenger_cabin, passenger_cabin]
+    starter_ship: false
+
+  # --- TIER 3: THE TITANS (Industry Leaders) ---
+  titan_behemoth:
+    id: titan_behemoth
+    name: "Behemoth Super-Freighter"
+    description: "A floating industrial zone. It takes a week to turn, but it can carry an entire colony's supplies."
+    base_value: 180000
+    max_modules: 36
+    default_modules: [efficiency_engine, efficiency_engine, high_cap_fuel_tank, barracks_cabin, standard_cargo_bay, standard_cargo_bay, standard_cargo_bay, standard_cargo_bay, secure_storage, secure_storage]
+    starter_ship: false
+
+  prowler_ghost:
+    id: prowler_ghost
+    name: "Ghost Prowler"
+    description: "The ultimate in covert logistics. Baffled drives and lead-shielded holds come standard."
+    base_value: 210000
+    max_modules: 24
+    default_modules: [stealth_drive, basic_fuel_tank, crew_cabin, smuggling_compartment, smuggling_compartment, smuggling_compartment, secure_storage, secure_storage]
+    starter_ship: false
+
+  palace_celestial:
+    id: palace_celestial
+    name: "Celestial Palace"
+    description: "More of a mobile hotel than a ship. Reserved for the absolute elite of the core worlds."
+    base_value: 250000
+    max_modules: 22
+    default_modules: [efficiency_engine, basic_fuel_tank, crew_cabin, luxury_suite, luxury_suite, luxury_suite, luxury_suite, automated_life_support]
+    starter_ship: false
+
+# ------------------------------------------------------------------------------
+# SECTION 5: COMPONENT MODULE DEFINITIONS
+# ------------------------------------------------------------------------------
+modules:
+  # --- ENGINES & PROPULSION ---
+  basic_engine:
+    id: basic_engine
+    name: "Basic Ion Engine"
+    value: 2000
+    modifiers: { speed: 10, fuel_consumption: 1, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  overclocked_engine:
+    id: overclocked_engine
+    name: "Overclocked Afterburners"
+    description: "Massive speed at the cost of terrifying fuel consumption."
+    value: 7500
+    modifiers: { speed: 25, fuel_consumption: 4, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  efficiency_engine:
+    id: efficiency_engine
+    name: "Eco-Flux Pulse Drive"
+    description: "Designed for the long haul. Slower sublight speeds but sips fuel."
+    value: 9000
+    modifiers: { speed: 7, fuel_consumption: 0.4, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  stealth_drive:
+    id: stealth_drive
+    name: "Whisper-Quiet Null Drive"
+    description: "Baffles thermal signatures. Massive boost to concealment."
+    value: 15000
+    modifiers: { speed: 12, fuel_consumption: 2, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 10, perishable_preservation: 0 }
+
+  # --- FUEL SYSTEMS ---
+  basic_fuel_tank:
+    id: basic_fuel_tank
+    name: "Standard Fuel Cell"
+    value: 800
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 50, crew_capacity: 0, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  high_cap_fuel_tank:
+    id: high_cap_fuel_tank
+    name: "High-Capacity Reservoir"
+    value: 4500
+    modifiers: { speed: -2, fuel_consumption: 0, fuel_capacity: 250, crew_capacity: 0, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  reinforced_fuel_tank:
+    id: reinforced_fuel_tank
+    name: "Armored Fuel Cell"
+    description: "Reinforced with depleted uranium mesh to prevent fuel leaks during transit hazards."
+    value: 6000
+    modifiers: { speed: -1, fuel_consumption: 0, fuel_capacity: 100, crew_capacity: 0, passenger_space: 0, cargo_space: 0, hazardous_protection: 3, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  # --- CARGO & STORAGE ---
+  standard_cargo_bay:
+    id: standard_cargo_bay
+    name: "Bulk Hold"
+    value: 2500
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 20, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  hazardous_storage:
+    id: hazardous_storage
+    name: "Class-4 Containment"
+    value: 4500
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 5, hazardous_protection: 5, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  secure_storage:
+    id: secure_storage
+    name: "Stasis Hold"
+    value: 3800
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 5, hazardous_protection: 0, fragile_protection: 5, illicit_concealment: 0, perishable_preservation: 0 }
+
+  smuggling_compartment:
+    id: smuggling_compartment
+    name: "Lead-Shielded Baffler"
+    value: 6000
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 5, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 5, perishable_preservation: 0 }
+
+  refrigerated_storage:
+    id: refrigerated_storage
+    name: "Cryo-Storage"
+    value: 3500
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 0, passenger_space: 0, cargo_space: 10, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 5 }
+
+  # --- HABITATION & LIFE SUPPORT ---
+  crew_cabin:
+    id: crew_cabin
+    name: "Crew Quarters"
+    value: 1500
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 3, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  barracks_cabin:
+    id: barracks_cabin
+    name: "Industrial Barracks"
+    description: "Double-bunked quarters for large-scale operations. Not private, but efficient."
+    value: 5000
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 10, passenger_space: 0, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  passenger_cabin:
+    id: passenger_cabin
+    name: "Commercial Cabin"
+    value: 3000
+    modifiers: { speed: 0, fuel_consumption: 0, fuel_capacity: 0, crew_capacity: 0, passenger_space: 5, cargo_space: 0, hazardous_protection: 0, fragile_protection: 0, illicit_concealment: 0, perishable_preservation: 0 }
+
+  luxury_suite:
+    id: luxury_suite
+    name: "Gilded Suite"
+    description: "Premium comfort for high-net-worth individuals. Multiplies VIP payouts."
+    value: 12000
+    modifiers: { speed: 0, fuel_consumption: 1, fuel_capacity: 0, crew_capacity: 0, passenger_space: 2, cargo_space: 0, hazardous_protection: 0, fragile_protection: 2, illicit_concealment: 0, perishable_preservation: 0 }
+
+  automated_life_support:
+    id: automated_life_support
+    name: "Omni-Med Life Support"
+    description: "Reduces the Difficulty Class of illness checks and provides massive habitation buffs."
+    value: 25000
+    modifiers: { speed: 0, fuel_consumption: 2, fuel_capacity: 0, crew_capacity: 5, passenger_space: 10, cargo_space: 0, hazardous_protection: 2, fragile_protection: 2, illicit_concealment: 0, perishable_preservation: 2 }
+
+# ------------------------------------------------------------------------------
+# SECTION 6: PLANETARY TRAIT DEFINITIONS
+# ------------------------------------------------------------------------------
+economic_statuses:
+  collapsed:
+    id: collapsed
+    name: "Collapsed"
+    status_rarity: 2
+    docking_fee: 300
+    export_contract_multiplier: 0.2
+    import_contract_multiplier: 2.5
+    export_passenger_multiplier: 0.2
+    import_passenger_multiplier: 1.8
+    fuel_cost_multiplier: 3.0
+    shipyard_cost_multiplier: 2.0
+    ship_sell_multiplier: 0.05
+    module_sell_multiplier: 0.1
+    repair_cost_multiplier: 3.0
+  destitute:
+    id: destitute
+    name: "Destitute"
+    status_rarity: 4
+    docking_fee: 215
+    export_contract_multiplier: 0.5
+    import_contract_multiplier: 1.5
+    export_passenger_multiplier: 0.5
+    import_passenger_multiplier: 1.5
+    fuel_cost_multiplier: 2.0
+    shipyard_cost_multiplier: 1.5
+    ship_sell_multiplier: 0.1
+    module_sell_multiplier: 0.25
+    repair_cost_multiplier: 2.0
+  struggling:
+    id: struggling
+    name: "Struggling"
+    status_rarity: 7
+    docking_fee: 145
+    export_contract_multiplier: 0.8
+    import_contract_multiplier: 1.2
+    export_passenger_multiplier: 0.8
+    import_passenger_multiplier: 1.2
+    fuel_cost_multiplier: 1.25
+    shipyard_cost_multiplier: 1.1
+    ship_sell_multiplier: 0.15
+    module_sell_multiplier: 0.3
+    repair_cost_multiplier: 1.25
+  developing:
+    id: developing
+    name: "Developing"
+    status_rarity: 8
+    docking_fee: 110
+    export_contract_multiplier: 0.9
+    import_contract_multiplier: 1.1
+    export_passenger_multiplier: 0.9
+    import_passenger_multiplier: 1.1
+    fuel_cost_multiplier: 1.1
+    shipyard_cost_multiplier: 1.0
+    ship_sell_multiplier: 0.2
+    module_sell_multiplier: 0.4
+    repair_cost_multiplier: 1.0
+  balanced:
+    id: balanced
+    name: "Balanced"
+    status_rarity: 6
+    docking_fee: 80
+    export_contract_multiplier: 1.0
+    import_contract_multiplier: 1.0
+    export_passenger_multiplier: 1.0
+    import_passenger_multiplier: 1.0
+    fuel_cost_multiplier: 1.0
+    shipyard_cost_multiplier: 1.0
+    ship_sell_multiplier: 0.4
+    module_sell_multiplier: 0.5
+    repair_cost_multiplier: 1.0
+  established:
+    id: established
+    name: "Established"
+    status_rarity: 5
+    docking_fee: 65
+    export_contract_multiplier: 1.2
+    import_contract_multiplier: 0.9
+    export_passenger_multiplier: 1.2
+    import_passenger_multiplier: 0.9
+    fuel_cost_multiplier: 0.9
+    shipyard_cost_multiplier: 0.95
+    ship_sell_multiplier: 0.55
+    module_sell_multiplier: 0.6
+    repair_cost_multiplier: 0.9
+  booming:
+    id: booming
+    name: "Booming"
+    status_rarity: 3
+    docking_fee: 50
+    export_contract_multiplier: 1.5
+    import_contract_multiplier: 0.8
+    export_passenger_multiplier: 1.5
+    import_passenger_multiplier: 0.8
+    fuel_cost_multiplier: 0.8
+    shipyard_cost_multiplier: 0.9
+    ship_sell_multiplier: 0.75
+    module_sell_multiplier: 0.7
+    repair_cost_multiplier: 0.8
+  prosperous:
+    id: prosperous
+    name: "Prosperous"
+    status_rarity: 2
+    docking_fee: 35
+    export_contract_multiplier: 2.0
+    import_contract_multiplier: 0.5
+    export_passenger_multiplier: 2.0
+    import_passenger_multiplier: 0.5
+    fuel_cost_multiplier: 0.5
+    shipyard_cost_multiplier: 0.75
+    ship_sell_multiplier: 0.85
+    module_sell_multiplier: 0.8
+    repair_cost_multiplier: 0.5
+
+social_statuses:
+  xenophobic:
+    id: xenophobic
+    name: "Xenophobic"
+    status_rarity: 2
+    fuel_cost_variance: 0.8
+    contract_volume_multiplier: 0.3
+    passenger_export_volume_multiplier: 0.05
+    passenger_import_volume_multiplier: 0.05
+  isolationist:
+    id: isolationist
+    name: "Isolationist"
+    status_rarity: 3
+    fuel_cost_variance: 0.7
+    contract_volume_multiplier: 0.5
+    passenger_export_volume_multiplier: 0.1
+    passenger_import_volume_multiplier: 0.1
+  oppressive:
+    id: oppressive
+    name: "Oppressive"
+    status_rarity: 5
+    fuel_cost_variance: 0.5
+    contract_volume_multiplier: 0.8
+    passenger_export_volume_multiplier: 2.5
+    passenger_import_volume_multiplier: 0.2
+  conventional:
+    id: conventional
+    name: "Conventional"
+    status_rarity: 6
+    fuel_cost_variance: 0.4
+    contract_volume_multiplier: 1.0
+    passenger_export_volume_multiplier: 1.0
+    passenger_import_volume_multiplier: 1.0
+  frontier:
+    id: frontier
+    name: "Frontier"
+    status_rarity: 4
+    fuel_cost_variance: 0.3
+    contract_volume_multiplier: 1.3
+    passenger_export_volume_multiplier: 0.8
+    passenger_import_volume_multiplier: 1.5
+  metropolitan:
+    id: metropolitan
+    name: "Metropolitan"
+    status_rarity: 8
+    fuel_cost_variance: 0.2
+    contract_volume_multiplier: 1.5
+    passenger_export_volume_multiplier: 1.5
+    passenger_import_volume_multiplier: 1.5
+  decadent:
+    id: decadent
+    name: "Decadent"
+    status_rarity: 3
+    fuel_cost_variance: 0.1
+    contract_volume_multiplier: 1.8
+    passenger_export_volume_multiplier: 2.0
+    passenger_import_volume_multiplier: 1.2
+  utopian:
+    id: utopian
+    name: "Utopian"
+    status_rarity: 1
+    fuel_cost_variance: 0.05
+    contract_volume_multiplier: 1.2
+    passenger_export_volume_multiplier: 0.2
+    passenger_import_volume_multiplier: 2.5
+
+political_statuses:
+  anarchy:
+    id: anarchy
+    name: "Anarchy"
+    status_rarity: 1
+    fuel_cost: [3, 50]
+    docking_fee_multiplier: 0.3
+    inspection_chance_modifier: 0
+    illicit_export_chance_multiplier: 3.0
+    illicit_import_payout_multiplier: 0.5
+    planetary_tag_chances:
+      refuel: 0.8
+      market: 0.65
+      cantina: 0.4
+      terminal: 0.85
+      shipyard: 0.2
+  corporatocracy:
+    id: corporatocracy
+    name: "Corporatocracy"
+    status_rarity: 3
+    fuel_cost: [5, 45]
+    docking_fee_multiplier: 2.3
+    inspection_chance_modifier: 10
+    illicit_export_chance_multiplier: 1.5
+    illicit_import_payout_multiplier: 1.2
+    planetary_tag_chances:
+      refuel: 1.0
+      market: 1.0
+      cantina: 0.65
+      terminal: 0.3
+      shipyard: 1.0
+  oligarchy:
+    id: oligarchy
+    name: "Oligarchy"
+    status_rarity: 4
+    fuel_cost: [22, 38]
+    docking_fee_multiplier: 2.0
+    inspection_chance_modifier: 15
+    illicit_export_chance_multiplier: 0.5
+    illicit_import_payout_multiplier: 2.0
+    planetary_tag_chances:
+      refuel: 0.8
+      market: 0.8
+      cantina: 0.8
+      terminal: 0.7
+      shipyard: 0.4
+  bureaucracy:
+    id: bureaucracy
+    name: "Bureaucracy"
+    status_rarity: 5
+    fuel_cost: [10, 18]
+    docking_fee_multiplier: 1.1
+    inspection_chance_modifier: 25
+    illicit_export_chance_multiplier: 0.8
+    illicit_import_payout_multiplier: 1.5
+    planetary_tag_chances:
+      refuel: 0.85
+      market: 1.0
+      cantina: 0.45
+      terminal: 0.25
+      shipyard: 0.25
+  democracy:
+    id: democracy
+    name: "Democracy"
+    status_rarity: 6
+    fuel_cost: [3, 15]
+    docking_fee_multiplier: 1.0
+    inspection_chance_modifier: 20
+    illicit_export_chance_multiplier: 1.0
+    illicit_import_payout_multiplier: 1.0
+    planetary_tag_chances:
+      refuel: 0.65
+      market: 0.75
+      cantina: 0.85
+      terminal: 0.85
+      shipyard: 0.85
+  technocracy:
+    id: technocracy
+    name: "Technocracy"
+    status_rarity: 3
+    fuel_cost: [20, 42]
+    docking_fee_multiplier: 1.6
+    inspection_chance_modifier: 40
+    illicit_export_chance_multiplier: 0.3
+    illicit_import_payout_multiplier: 2.5
+    planetary_tag_chances:
+      refuel: 0.95
+      market: 0.65
+      cantina: 0.65
+      terminal: 0.45
+      shipyard: 0.85
+  theocracy:
+    id: theocracy
+    name: "Theocracy"
+    status_rarity: 4
+    fuel_cost: [9, 25]
+    docking_fee_multiplier: 1.8
+    inspection_chance_modifier: 60
+    illicit_export_chance_multiplier: 0.2
+    illicit_import_payout_multiplier: 2.5
+    planetary_tag_chances:
+      refuel: 0.55
+      market: 0.65
+      cantina: 0.7
+      terminal: 0.85
+      shipyard: 0.9
+  dictatorship:
+    id: dictatorship
+    name: "Dictatorship"
+    status_rarity: 2
+    fuel_cost: [15, 35]
+    docking_fee_multiplier: 2.2
+    inspection_chance_modifier: 80
+    illicit_export_chance_multiplier: 0.1
+    illicit_import_payout_multiplier: 3.0
+    planetary_tag_chances:
+      refuel: 0.4
+      market: 0.9
+      cantina: 0.7
+      terminal: 0.3
+      shipyard: 0.1
+
+# ------------------------------------------------------------------------------
+# SECTION 7: WORLD DATA - PLANETARY SYSTEMS
+# ------------------------------------------------------------------------------
+planets:
+  prime:
+    id: prime
+    name: "Canis Prime"
+    starter_planet: true
+    economic_status: prosperous
+    social_status: metropolitan
+    political_status: democracy
+    docking_fee: 250
+    x: 0
+    y: 0
+    tags: [market, shipyard, cantina, terminal, refuel]
+    contracts:
+      min_active: 15
+      max_active: 30
+      qty_min: 5
+      qty_max: 15
+      distance_modifier: 0.05
+      variance_min: 0.9
+      variance_max: 1.1
+      expiration_buffer_min: 5
+      expiration_buffer_max: 10
+    market:
+      exports: [medical_supplies, synthetic_proteins, fusion_coils]
+      imports: [machinery_parts, unstable_medicine, masterwork_sculptures]
+    shipyard:
+      chassis: [{id: shuttle_wasp, weight: 100}, {id: coach_shuttle, weight: 50}, {id: liner_starlight, weight: 10}]
+      modules: [basic_engine, basic_fuel_tank, standard_cargo_bay, passenger_cabin]
+      min_ships: 3
+      max_ships: 6
+      refresh_timer: 3
+    cantina:
+      min_crew: 10
+      max_crew: 20
+      refresh_timer: 2
+      species_weights: [{id: human, weight: 100}, {id: android, weight: 30}, {id: vesperan, weight: 10}]
+      role_weights: [{id: pilot, weight: 50}, {id: navigator, weight: 50}, {id: steward, weight: 80}]
+      skill_range: [4, 9]
+    terminal:
+      min_passengers: 20
+      max_passengers: 40
+      refresh_timer: 1
+      class_weights: [{id: standard, weight: 100}, {id: vip, weight: 20}]
+      preferred_destinations: [{id: solstice, weight: 50}, {id: nexus, weight: 50}, {id: vanguard, weight: 30}]
+      preferred_chance: 0.8
+    refuel:
+      price_range: [2, 4]
+
+# ------------------------------------------------------------------------------
+# SECTION 8: PASSENGER CLASS REGISTRY
+# ------------------------------------------------------------------------------
+# Defines demographic profiles for living cargo.
+#
+# Logic Note:
+# 'tags' dictate which module capacities the passenger consumes.
+# ------------------------------------------------------------------------------
+
+passenger_classes:
+  standard:
+    id: standard
+    name: Common Commuter
+    base_payout: 125
+    tags: []
+  
+  vip:
+    id: vip
+    name: Corporate Executive
+    base_payout: 500
+    tags: [vip]
+  
+  fugitive:
+    id: fugitive
+    name: Wanted Smuggler
+    base_payout: 800
+    tags: [fugitive]
+
+  refugee:
+    id: refugee
+    name: Displaced Refugee
+    base_payout: 40
+    tags: [refugee]
+
+  military_personnel:
+    id: military_personnel
+    name: Active-Duty Mercenary
+    base_payout: 200
+    tags: [military]
+
+# ------------------------------------------------------------------------------
+# SECTION 9: AI RIVAL FACTION DEFINITIONS
+# ------------------------------------------------------------------------------
+factions:
+  omni_corp:
+    id: omni_corp
+    name: OmniCorp Logistics
+    description: "The 'Golden Standard' of corporate greed. They rely on massive volume and zero-margin efficiency."
+    enabled: true
+    min_ships: 4
+    max_ships: 20
+    fleet_expansion_chance_percent: 80
+    fleet_expansion_check_days: [7]
+    aggressiveness: high
+    preferred_tags: []
+    base_chassis: barge_mule
+    rare_chassis: titan_behemoth
+    rare_chassis_chance: 5
+
+  crimson_syndicate:
+    id: crimson_syndicate
+    name: The Crimson Syndicate
+    description: "A loose web of blockade runners and data-thieves operating in the legal grey zones."
+    enabled: true
+    min_ships: 2
+    max_ships: 8
+    fleet_expansion_chance_percent: 40
+    fleet_expansion_check_days: [10]
+    aggressiveness: medium
+    preferred_tags: [illicit, hazardous]
+    base_chassis: shuttle_wasp
+    rare_chassis: clipper_shadow
+    rare_chassis_chance: 25
+
+# ------------------------------------------------------------------------------
+# SECTION 10: GENERATOR DATA - BIOLOGICAL SPECIES
+# ------------------------------------------------------------------------------
+species:
+  human:
+    first_names: [Aris, Bael, Calla, Darrow, Elowen, Fray, Garris, Hestia, Iver, Jace, Kira, Lorn, Merrick, Nyra, Orin, Pax, Quinn, Roam, Silas, Tova, Ulric, Vayne, Wes, Xander, Yara, Zedd, Alistair, Blythe, Corin, Danae, Elias, Faulk, Greer, Hollis, Isolt, Jensen, Kael, Lyra, Maric, Nola, Osric, Petra, Rhane, Stellan, Thayer, Valen, Wynn, Xora, Yorick, Zale]
+    last_names: [Ashwood, Blackwood, Coldstream, Draken, Everly, Frost, Graves, Halloway, Ironwood, Janner, Kross, Locke, Mercer, Nightfall, Oakes, Pendrake, Quyle, Rane, Sterling, Thorne, Underhill, Vance, Wylde, Xane, Yardley, Zane, Ardent, Bastion, Creed, Drift, Edge, Flint, Geary, Haul, Jinx, Keel, Lowery, Margo, North, Pike, Riff, Slate, Trawl, Vale, West, York, Zero, Hallow, Bane]
+
+  saurian:
+    first_names: [Sslisk, Vesk, Krox, Zirsh, Trask, Gorosh, Sarn, Vyrn, Kras, Druk, Viss, Zath, Xor, Riss, Throx, Slark, Vorn, Zusk, Kael, Slar, Vissar, Zir, Kress, Tharn, Vax, Krssk, Zorr, Vessk, Thriss, Slarn, Grish, Vork, Zarsh, Krazz, Drox, Sslar, Vyrnn, Zathh, Xirr, Rissk, Thon, Slarsh, Vessar, Zirsh, Krok, Slisk, Vask, Zurn, Grak, Sskir]
+    last_names: [Bloodscale, Ironhide, Venomtooth, Stoneclaw, Darktail, Sunbask, Sandcrawler, Swampwalker, Firebreath, Coldblood, Swiftstrike, Hardscale, Razorclaw, Bonecrusher, Spineback, Nightstalker, Voidscale, Starfang, Redeye, Blacktongue, Greenhide, Ashscale, Slither, Fang, Claw, Goretooth, Scaleborn, Deepstalker, Sharpclaw, Ironshell, Mossback, Riverstrike, Quicktail, Heavybite, Bonebreaker, Skullsmasher, Venombite, Acidscale, Rockcrusher, Mudwalker, Sandstriker, Windcrawler, Ashhide, Blackscale, Redscale, Goldhide, Silverscale, Ironscale, Steelhide, Shadowclaw]
+
+  vesperan:
+    first_names: [Lumis, Aeth, Vael, Nyx, Solis, Lyra, Elen, Phaed, Sylph, Zeph, Orio, Cael, Lyr, Vesp, Astra, Celes, Stell, Lun, Aur, Ecli, Nym, Pha, Ryl, Xyr, Vyn, Lume, Aether, Vaer, Nyxi, Solo, Lyre, Elos, Phae, Syl, Zephi, Orion, Caelys, Lyra, Vespar, Astrel, Celest, Stellar, Luna, Aura, Eclips, Nymph, Phael, Ryll, Xylo, Vynis]
+    last_names: [Starweaver, Voidcaller, Lightbringer, Shadowdancer, Moonwhisper, Sunflare, Etherborn, Dreamwalker, Nightshade, Dawnstrider, Duskfall, Skywatcher, Astral, Celestia, Nebula, Cosmos, Horizon, Zenith, Nadir, Eclipse, Solstice, Equinox, Aurora, Corona, Halo, Starlight, Voidwalker, Lightseeker, Shadowborn, Moonless, Sunless, Etheric, Dreamer, Nightborn, Dawning, Dusking, Skyborn, Astris, Cele, Nebul, Cosmic, Horizon, Zenit, Nadiri, Eclip, Solst, Equin, Auror, Coron, Halos]
+
+  elyrian:
+    first_names: [Kree, Talon, Cor, Vax, Ril, Zyr, Kra, Tix, Vyr, Orik, Skar, Jik, Tael, Reev, Vess, Zix, Ciri, Brix, Drix, Fael, Grix, Hael, Jaxx, Lira, Xael, Kreek, Tal, Coru, Vaxx, Rill, Zyrr, Kraa, Tixx, Vyrr, Orikk, Skarr, Jikk, Taell, Reevo, Vesso, Zixx, Ciria, Brixx, Drixx, Faello, Grixx, Haello, Jaxxo, Liraa, Xaello]
+    last_names: [Skyborne, Windrider, Cloudpiercer, Stormcaller, Galehawk, Featherlight, Highsoar, Swiftwing, Sharpbeak, Ironfeather, Sunflyer, Moonwing, Starbeak, Voidtalon, Nightbird, Dayhawk, Dawnwing, Duskfeather, Zephyr, Aerie, Roost, Falcon, Eagle, Hawk, Owl, Skybird, Windwing, Cloudsoar, Stormwing, Galewing, Featherborne, Highwing, Swiftbeak, Sharpwing, Ironwing, Sunwing, Moonbeak, Starwing, Voidwing, Nightwing, Daywing, Dawnbeak, Duskwing, Zephyrs, Aerier, Rooster, Falcone, Eaglea, Hawko, Owlo]
+
+  krell:
+    first_names: [Krag, Dorn, Gorn, Brak, Thok, Rul, Grok, Krol, Drok, Brol, Torg, Varg, Zarn, Morv, Lorn, Garb, Hruk, Narm, Pragg, Rull, Skarn, Wrug, Yorn, Bruk, Krog, Kragg, Dorno, Gorno, Brako, Thoko, Rulo, Groko, Krolo, Droko, Brolo, Torgo, Vargo, Zarno, Morvo, Lorno, Garbo, Hruko, Narmo, Praggo, Rullo, Skarno, Wrugo, Yorn, Bruko, Krogo]
+    last_names: [Stonecrusher, Crag, Boulder, Mountain, Earthshaker, Ironfist, Steelbreaker, Hardrock, Granite, Marble, Obsidian, Flint, Slate, Shale, Basalt, Pumice, Quartz, Onyx, Diamond, Ruby, Emerald, Sapphire, Topaz, Amethyst, Jade, Stonefist, Cragfist, Boulderfist, Mountainfist, Earthfist, Ironstone, Steelstone, Hardstone, Granitestone, Marblestone, Obsidianstone, Flintstone, Slatestone, Shalestone, Basaltstone, Pumicestone, Quartzstone, Onyxstone, Diamondstone, Rubystone, Emeraldstone, Sapphirestone, Topazstone, Amethyststone, Jadestone]
+
+  thallian:
+    first_names: [Spore, Bloom, Vine, Root, Moss, Fern, Leaf, Bark, Stem, Seed, Bud, Thorn, Bramble, Thistle, Clover, Reed, Sedge, Rush, Willow, Alder, Birch, Cedar, Pine, Fir, Spruce, Mycel, Hypha, Agar, Bolete, Puff, Gill, Cap, Stipe, Rhiz, Morel, Truffle, Shaggy, Inky, Oyster, Chanter, King, Wood, Dryad, Fairy, Witch, Fawn, Shroom, Gourd, Fern, Root]
+    last_names: [Bloomfield, Rootborn, Vinewalker, Sporeheart, Mossy, Ferny, Leafy, Barky, Stemy, Seedy, Budy, Thorny, Brambly, Thistly, Clovery, Reedy, Sedgy, Rushy, Willowy, Aldery, Birchy, Cedary, Piney, Firy, Sprucy, Fungal, Moldy, Decay, Growth, Fertile, Soil, Earth, Ground, Wild, Overgrown, Tangled, Thick, Dense, Deep, Green, Brown, Black, White, Red, Gold, Silver, Iron, Steel, Stone, Wood]
+
+android:
+  callsigns: [Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India, Juliet, Kilo, Lima, Mike, November, Oscar, Papa, Quebec, Romeo, Sierra, Tango, Uniform, Victor, Whiskey, X-Ray, Yankee, Zulu, Apex, Binary, Cipher, Data, Flux, Grid, Helix, Ion, Jolt, Kernel, Link, Matrix, Node, Optic, Pulse, Quark, Relay, Signal, Trace, Unit, Vector, Warp, Xenon, Yield]
+  serial_suffix:
+    min_digits: 2
+    max_digits: 4
+    character_set: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
